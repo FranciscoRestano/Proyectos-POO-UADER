@@ -1,0 +1,145 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+using namespace std;
+
+class Producto {
+protected:
+    int numero;
+    string descrip;
+    double precio;
+public:
+    Producto (int n, string d, double p);
+
+    double getPrecio () {return precio;}
+    string getDescrip () {return descrip;}
+
+    virtual void calcularPrecio () = 0;
+};
+
+Producto::Producto (int n, string d, double p) {
+    numero = n;
+    descrip = d;
+    precio = p;
+}
+
+class Parte : public Producto {
+public:
+    Parte (int n, string d, double p) : Producto (n , d, p) {}
+
+    void calcularPrecio () {}
+};
+
+class Bicicleta : public Producto {
+private:
+    vector <Parte*> partes;
+public:
+    Bicicleta (int n, string d) : Producto (n, d , 0) {}
+    void addParte (Parte* p);
+    void calcularPrecio ();
+};
+
+void Bicicleta::addParte(Parte* p) {
+    partes.push_back(p);
+}
+
+void Bicicleta::calcularPrecio() {
+    for (auto p : partes) {
+        precio += p.getPrecio();
+    }
+}
+
+class Oferta {
+private:
+    vector <Producto*> ofertas;
+    double precio;
+public:
+    Oferta (Producto* p);
+    friend std::ostream& operator << (std::ostream& os, Oferta& p);
+    void calcularPrecio ();
+};
+
+Oferta::Oferta (Producto *p) {
+    ofertas.push_back(p);
+}
+
+std::ostream& operator << (std::ostream& os, Oferta& p) {
+    for (int i=0;i<p.ofertas.size();i++) {
+        os << p.ofertas[i]->getDescrip() << ", ";
+    }
+    os << p.calcularOferta();
+    return os;
+}
+
+void Oferta::calcularPrecio() {
+    for (auto p : ofertas) {
+        precio += p->calcularPrecio();
+    }
+
+    precio *= 0.80;
+}
+
+class Gestor {
+private:
+    vector <Oferta*> productosEnOferta;
+    vector <Producto*> productos;
+    vector<Bicicleta*> bicicletas; // PARA STL
+public:
+    void addOferta (Oferta* o) {
+        productosEnOferta.push_back(o);
+    }
+    void addProducto (Producto* p) {
+        productos.push_back(p);
+        if (Bicicleta* b = dynamic_cast<Bicicleta*>(p)) {
+            bicicletas.push_back(b);
+        }
+    }
+
+    void crearBinario ();
+    void crearTxt ();
+
+    vector <Bicicleta*> biciMasCara ();
+};
+
+void Gestor::crearBinario() {
+    std::ofstream archi("nombre.dat", ios::binary);
+
+    for (auto p : productos) {
+        size_t len = p->getDescrip().size();
+        archi.write(reinterpret_cast<const char*>(&len), sizeof(len));
+        archi.write(p->getDescrip().c_str(), len);
+
+    }
+
+    archi.close();
+}
+
+
+void Gestor::crearTxt() {
+    ofstream archi ("ofertas.txt");
+
+    for (auto p : productosEnOferta) {
+        archi << *p << endl;
+    }
+
+    archi.close();
+}
+
+vector <Bicicleta*> Gestor::biciMasCara() {
+    vector <Bicicleta*> aux = bicicletas;
+
+    sort(aux.begin(), aux.end(), [](Bicicleta* a, Bicicleta* b){
+        return a->getPrecio() > b->getPrecio(); // orden descendente
+    });
+    vector <Bicicleta*> caras;
+    if (!aux.empty()) {
+        double precio = aux[0]->getPrecio();
+        for (auto b : aux) {
+            if (b->getPrecio() == precio)
+                caras.push_back(b);
+            else break;
+        }
+    }
+    return caras;
+}
