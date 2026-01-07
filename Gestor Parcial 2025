@@ -1,0 +1,99 @@
+#include <iostream>
+#include <vector>
+using namespace std;
+
+class Producto {
+protected:
+    char descrip [20];
+    int codigo;
+public:
+    Producto (const char* d, int c);
+
+    char* getDescrip () {return descrip;}
+    virtual double getPrecio () = 0;
+};
+
+Producto::Producto (const char *d, int c) {
+    strcpy (descrip, d);
+    codigo = c;
+}
+
+class Parte : public Producto {
+private:
+    double precio;
+public:
+    Parte (const char* d, int c, double p) : Producto (d, c),precio (p) {}
+
+    double getPrecio();
+};
+
+double Parte::getPrecio() {
+    return precio;
+}
+
+class Bicicleta : public Producto {
+private:
+    vector <Parte*> bicicleta;
+public:
+    Bicicleta (const char* d, int c) : Producto (d,c) {}
+
+    void addParte (Parte* p);
+    double getPrecio ();
+};
+
+void Bicicleta::addParte(Parte *p) {
+    bicicleta.push_back(p);
+}
+double Bicicleta::getPrecio() {
+    double p = 0;
+    for (int i=0; i<bicicleta.size();i++) {
+        p += bicicleta[i]->getPrecio();
+    }
+    return p;
+}
+
+class Oferta {
+private:
+    vector <Producto*> ofertas;
+public:
+    friend std::ostream& operator << (std::ostream& os, Oferta& p);
+    void addOferta (Producto* p);
+    double calcularOferta ();
+};
+
+std::ostream& operator << (std::ostream& os, Oferta& p) {
+    for (int i=0;i<p.ofertas.size();i++) {
+        os << p.ofertas[i]->getDescrip() << ", ";
+    }
+    os << p.calcularOferta();
+    return os;
+}
+void Oferta::addOferta(Producto *p) {
+    ofertas.push_back(p);
+}
+double Oferta::calcularOferta() {
+    double p=0;
+    for (int i=0;i<ofertas.size();i++) {
+        p += ofertas[i]->getPrecio();
+    }
+    p *= 0.80;
+    return p;
+}
+
+class Gestor {
+private:
+    vector <Oferta*> listaOfertas;
+public:
+    void addOferta (Oferta* o);
+    void mostrar ();
+};
+
+void Gestor::addOferta(Oferta *o) {
+    listaOfertas.push_back(o);
+}
+
+void Gestor::mostrar() {
+    for (int i=0;i<listaOfertas.size();i++) {
+        cout << *listaOfertas [i] << endl;
+    }
+}
