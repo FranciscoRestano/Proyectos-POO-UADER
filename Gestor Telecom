@@ -1,0 +1,175 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <map>
+using namespace std;
+
+
+struct datosEmail {
+    int numero; //identificador
+    char email [100];
+    char texto [500];
+};
+
+struct datosMsj {
+    int numero;
+    int nroTelefono;
+    char texto [150];
+};
+
+class Email {
+private:
+    datosEmail datos;
+public:
+    Email (datosEmail d);
+
+    int getNumero () {return datos.numero;}
+    string getTexto () {return datos.texto;}
+    string getMail () {return datos.email;}
+};
+
+Email::Email (datosEmail d) {
+    datos.numero = d.numero;
+    strcpy (datos.email, d.email);
+    strcpy (datos.texto, d.texto);
+}
+
+class Mensaje {
+private:
+    datosMsj datos;
+public:
+    Mensaje (datosMsj d);
+
+    int getNumero () {return datos.numero;}
+    string getTexto () {return datos.texto;}
+    int getNroTel () {return datos.nroTelefono;}
+};
+
+Mensaje::Mensaje (datosMsj d) {
+    datos.numero = d.numero;
+    datos.nroTelefono = d.nroTelefono;
+    strcpy (datos.texto, d.texto);
+}
+
+
+class Gestor {
+private:
+    vector<Email*> mails;
+    vector<Mensaje*> textos;
+public:
+    Gestor (const char* RutaArchivo);
+    void leerMensaje (const char* RutaArchivo);
+
+    void crearTxt ();
+    void ordenar ();
+    map <string, int> mailRepe ();
+    map <int, int> telRepe ();
+};
+
+Gestor::Gestor(const char* RutaArchivo) {
+    ifstream archivo(RutaArchivo, ios::binary);
+    datosEmail datos;
+
+    while (archivo.read(reinterpret_cast<char*>(&datos), sizeof(datosEmail))) {
+        Email* email = new Email (datos);
+        mails.push_back(email);
+    }
+
+    archivo.close();
+}
+
+void Gestor::leerMensaje(const char *RutaArchivo) {
+    ifstream archivo(RutaArchivo, ios::binary);
+    datosMsj datos;
+
+    while (archivo.read(reinterpret_cast<char*>(&datos), sizeof(datosMsj))) {
+        Mensaje* msj = new Mensaje (datos);
+        textos.push_back(msj);
+    }
+
+    archivo.close();
+}
+
+void Gestor::crearTxt() {
+    ofstream archi ("notificacion.txt");
+
+    for (auto m : mails) {
+        archi << "E " << m->getMail() << " " << m->getTexto() << "\n";
+    }
+
+    for (auto t : textos) {
+        archi << "T" << t->getNroTel() << " " << t->getTexto() << "\n";
+    }
+
+    archi.close();
+}
+
+void Gestor::ordenar() {
+    vector<Mensaje*> aux = textos;
+
+    sort(aux.begin(), aux.end(), [](Mensaje* a, Mensaje* b){
+        return a->getNroTel() > b->getNroTel() // orden descendente
+    });
+
+    ofstream archi ("ordenados.txt");
+
+    for (auto t : aux) {
+        archi << t->getNroTel() << t->getTexto();
+    }
+
+    archi.close();
+}
+
+map <string, int> Gestor::mailRepe() {
+    map <string, int> contador;
+
+    for (auto m : mails) {
+        contador [m->getMail()]++;
+    }
+
+    for (auto a : contador) {
+        if (a.second > 1) {
+            cout << a.first << " aparece " << a.second << " veces" << endl;
+        }
+    }
+
+    return contador;
+}
+
+map <int, int> Gestor::telRepe () {
+    map <int, int> contador;
+
+    for (auto t : textos) {
+        contador [t->getNroTel()]++;
+    }
+
+    for (auto a : contador) {
+        if (a.second > 1) {
+            cout << a.first << " aparece " << a.second << " veces" << endl;
+        }
+    }
+
+    return contador;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
